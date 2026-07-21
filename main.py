@@ -256,7 +256,14 @@ if st.session_state.divisoes_instaladas:
     for div in st.session_state.divisoes_instaladas:
         st.write(f"🏢 {div['nome']}:")
 
-        for eq, qtd_req in div["equipamentos_base"].items():
+        equipamentos_rota = div["equipamentos_base"].copy()
+
+        if quer_modo_casa == "SIM (Quer segurança à noite por dentro)" and div["tem_janelas"]:
+            qtd_cm = equipamentos_rota.get("Contacto Magnético", 0)
+            if qtd_cm < div["num_janelas"]:
+                equipamentos_rota["Contacto Magnético"] = div["num_janelas"]
+
+        for eq, qtd_req in equipamentos_rota.items():
             if eq == "Painel Touchscreen Principal":
                 if stock.get("Painel Touchscreen Principal", 0) > 0:
                     st.success("📱 Fixar Painel Principal → Instalar nos furos de sabotagem (Incluído).")
@@ -265,12 +272,16 @@ if st.session_state.divisoes_instaladas:
                     st.warning("➕ Fixar Painel Principal → Falta no Contrato!")
                 continue
 
-            for _ in range(qtd_req):
-                if stock.get(eq, 0) > 0:
-                    st.caption(f"✔️ Instalar 1x {eq} (Incluído)")
-                    stock[eq] -= 1
+            qtd_base = div["equipamentos_base"].get(eq, 0)
+            for i in range(qtd_req):
+                if i < qtd_base:
+                    if stock.get(eq, 0) > 0:
+                        st.caption(f"✔️ Instalar 1x {eq} (Incluído)")
+                        stock[eq] -= 1
+                    else:
+                        st.info(f"➕ Instalar 1x {eq} (Extra a Faturar)")
                 else:
-                    st.info(f"➕ Instalar 1x {eq} (Extra a Faturar)")
+                    st.info(f"➕ Instalar 1x {eq} (Extra — Perímetro Noturno)")
 
     st.divider()
 
