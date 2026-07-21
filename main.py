@@ -125,6 +125,7 @@ with c1:
 with c2:
     alto_valor = st.checkbox("Zona de Alto Valor (Cofre/Bastidor/Stock)")
     st.write("---")
+    quer_painel_opcional = st.checkbox("📱 Instalar Painel Principal nesta divisão")
     quer_cortina_opcional = st.checkbox("➕ Incluir Sensor Cortina")
     quer_quebra_vidros_opcional = st.checkbox("➕ Incluir Sensor Quebra de Vidros")
     quer_sirene_ext_opcional = st.checkbox("➕ Incluir Sirene Exterior")
@@ -146,7 +147,6 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
         nova_divisao["equipamentos_base"]["Contacto Magnético"] = 1
         if num_janelas > 1:
             nova_divisao["equipamentos_base"]["Contacto Magnético"] += (num_janelas - 1)
-        nova_divisao["equipamentos_base"]["Painel Touchscreen Principal"] = 1
     else:
         lista_pircam = ["Sala de Estar / Zona Comum", "Escritório", "Arrecadação / Armazém",
                         "Oficina / Zona Técnica", "Cave", "Quarto / Suite", "Garagem / Anexo"]
@@ -157,8 +157,8 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
                             or divisao_selecionada in ["Garagem / Anexo", "Cave"]):
             nova_divisao["equipamentos_base"]["Contacto Magnético"] = num_janelas
 
-    if divisao_selecionada == "Cozinha / Copa":
-        nova_divisao["equipamentos_base"]["Sensor de Fumo/Temp"] = 1
+    if quer_painel_opcional:
+        nova_divisao["equipamentos_base"]["Painel Touchscreen Principal"] = 1
 
     if quer_cortina_opcional:
         nova_divisao["equipamentos_base"]["Sensor Cortina"] = 1
