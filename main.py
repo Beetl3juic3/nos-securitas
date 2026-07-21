@@ -41,44 +41,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 # --- CABEÇALHO COM LOGO ---
-_logo_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="220" height="80" viewBox="0 0 220 80" style="display:block;margin:auto;">
-  <rect width="220" height="80" rx="12" fill="#E60000"/>
-  <text x="110" y="50" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="36" font-weight="bold">NOS</text>
-</svg>"""
-
-st.markdown(_logo_svg, unsafe_allow_html=True)
 st.markdown(
-    '<h2 style="text-align:center;margin-top:0.2rem;margin-bottom:0.2rem;color:#003366;">'
-    'NOS Securitas</h2>',
+    '<div style="text-align:center;margin-bottom:0.5rem;">'
+    '<span style="font-size:2.5rem;font-weight:800;color:#E60000;letter-spacing:2px;">NOS</span>'
+    '</div>',
     unsafe_allow_html=True
 )
 st.markdown(
-    '<p style="text-align:center;color:#666;font-size:0.95rem;margin-top:0;">'
+    '<h2 style="text-align:center;margin-top:0;margin-bottom:0.2rem;color:#003366;font-weight:600;">'
+    'Securitas</h2>',
+    unsafe_allow_html=True
+)
+st.markdown(
+    '<p style="text-align:center;color:#888;font-size:0.9rem;margin-top:0.1rem;">'
     'Auditoria e Orçamentação — Validação técnica em campo</p>',
     unsafe_allow_html=True
 )
 st.divider()
 
 
-# --- DEMO RÁPIDO ---
-col_demo, col_espaco = st.columns([1, 3])
-with col_demo:
-    if st.button("🚀 Carregar Demo (Casa T3 + Extras)", use_container_width=True):
-        st.session_state.divisoes_instaladas = [
-            {"nome": "Hall de Entrada / Recepção", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 2, "grande_envidracado": False, "alto_valor": False, "equipamentos_base": {"Sensor com Câmara": 1, "Contacto Magnético": 2}},
-            {"nome": "Sala de Estar / Zona Comum", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 3, "grande_envidracado": True, "alto_valor": False, "equipamentos_base": {"Sensor PIR Normal": 1, "Contacto Magnético": 3, "Sensor Quebra de Vidros": 1}},
-            {"nome": "Quarto / Suite", "piso": "Piso Intermédio", "tem_janelas": True, "num_janelas": 1, "grande_envidracado": False, "alto_valor": False, "equipamentos_base": {"Sensor PIR Normal": 1, "Contacto Magnético": 1}},
-            {"nome": "Cozinha / Copa", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 2, "grande_envidracado": False, "alto_valor": True, "equipamentos_base": {"Sensor PIR Normal": 1, "Contacto Magnético": 2, "Sensor de Fumo/Temp": 1}},
-            {"nome": "Varanda / Terraço", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 1, "grande_envidracado": True, "alto_valor": False, "equipamentos_base": {"Sensor Cortina": 1, "Sirene Exterior": 1}},
-        ]
-        st.session_state.alertas_finais = [
-            "⚠️ Sala de Estar / Zona Comum: Afastar PIR da rota direta do fluxo de ar do AC/Lareira.",
-            "🐾 Modo Pet: Configurar altura/lentes imunes a animais na divisão 'Varanda / Terraço'."
-        ]
-        st.toast("Demo carregada! Casa T3 com 5 divisões + extras.", icon="🚀")
-        st.rerun()
-
-st.divider()
 
 # --- TABELA DE PREÇOS MENSAIS OFICIAIS ---
 PRECOS_MENSALIDADES = {
@@ -94,21 +75,11 @@ PRECOS_MENSALIDADES = {
     "Sensor Quebra de Vidros": 2.00
 }
 
-# --- INICIALIZAÇÃO DA MEMÓRIA DA APP (com demo rápida) ---
+# --- INICIALIZAÇÃO DA MEMÓRIA DA APP ---
 if "divisoes_instaladas" not in st.session_state:
-    # Demo rápida: casa T3 completa com extras
-    st.session_state.divisoes_instaladas = [
-        {"nome": "Hall de Entrada / Recepção", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 2, "grande_envidracado": False, "alto_valor": False, "equipamentos_base": {"Sensor com Câmara": 1, "Contacto Magnético": 2}},
-        {"nome": "Sala de Estar / Zona Comum", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 3, "grande_envidracado": True, "alto_valor": False, "equipamentos_base": {"Sensor PIR Normal": 1, "Contacto Magnético": 3, "Sensor Quebra de Vidros": 1}},
-        {"nome": "Quarto / Suite", "piso": "Piso Intermédio", "tem_janelas": True, "num_janelas": 1, "grande_envidracado": False, "alto_valor": False, "equipamentos_base": {"Sensor PIR Normal": 1, "Contacto Magnético": 1}},
-        {"nome": "Cozinha / Copa", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 2, "grande_envidracado": False, "alto_valor": True, "equipamentos_base": {"Sensor PIR Normal": 1, "Contacto Magnético": 2, "Sensor de Fumo/Temp": 1}},
-        {"nome": "Varanda / Terraço", "piso": "Rés-do-Chão / Alvo Fácil", "tem_janelas": True, "num_janelas": 1, "grande_envidracado": True, "alto_valor": False, "equipamentos_base": {"Sensor Cortina": 1, "Sirene Exterior": 1}},
-    ]
+    st.session_state.divisoes_instaladas = []
 if "alertas_finais" not in st.session_state:
-    st.session_state.alertas_finais = [
-        "⚠️ Sala de Estar / Zona Comum: Afastar PIR da rota direta do fluxo de ar do AC/Lareira.",
-        "🐾 Modo Pet: Configurar altura/lentes imunes a animais na divisão 'Varanda / Terraço'."
-    ]
+    st.session_state.alertas_finais = []
 if "nome_cliente" not in st.session_state:
     st.session_state.nome_cliente = ""
 if "historico_auditorias" not in st.session_state:
@@ -239,7 +210,7 @@ if grande_envidracado:
 if tem_animais and "Sim" in tem_animais:
     sugestoes.append("💡 Animal no interior — usar PIR com lentes imunes a pets ou Sensor Cortina.")
 if alto_valor:
-    sugestoes.append("💡 Zona de Alto Valor — adicionar Câmara de Vídeo Interior ou Sensor com Câmara.")
+    sugestoes.append("💡 Zona de Alto Valor — Câmara de Vídeo Interior fortemente recomendada.")
 if tem_ac_calor:
     sugestoes.append("💡 Fonte de calor — afastar PIR da rota do ar quente.")
 if piso_selecionado == "Rés-do-Chão / Alvo Fácil" and tem_janelas:
@@ -455,24 +426,7 @@ if st.session_state.divisoes_instaladas:
 
     st.divider()
 
-    # --- COMPARADOR DE PACOTES ---
-    st.subheader("📊 Comparador de Pacotes")
-    pacotes = {
-        "Base (Contrato)": {k: contrato_comercial.get(k, 0) for k in PRECOS_MENSALIDADES.keys()},
-        "Necessário (Campo)": necessidades_campo,
-        "Extra a Faturar": faltas_faturar,
-    }
-    comp_cols = st.columns(3)
-    for i, (nome, dados) in enumerate(pacotes.items()):
-        with comp_cols[i]:
-            total_p = sum(dados.values())
-            st.markdown(f"**{nome}**")
-            st.markdown(f'<div style="font-size:1.4rem;font-weight:700;color:{NOS_AZUL if i==1 else NOS_VERMELHO if i==2 else "#333"};">{total_p} equip.</div>', unsafe_allow_html=True)
-            for d, q in dados.items():
-                if q > 0:
-                    st.caption(f"{q}x {d}")
 
-    st.divider()
 
     # --- FECHO ---
     st.subheader("5. Fecho de Venda")
@@ -516,15 +470,8 @@ check_items = [
     ("cliente_treinado", "👥 Cliente treinado no uso da app/painel"),
 ]
 
-progresso = sum(1 for v in st.session_state.checklist.values() if v)
-total_checks = len(st.session_state.checklist)
-st.progress(progresso / total_checks, text=f"{progresso}/{total_checks} tarefas concluídas")
-
 for key, label in check_items:
     st.session_state.checklist[key] = st.checkbox(label, value=st.session_state.checklist[key])
-
-if progresso == total_checks:
-    st.success("🎯 Checklist completo! Instalação pronta para ativação.")
 
 if st.session_state.alertas_finais:
     st.write("Alertas específicos detetados:")
