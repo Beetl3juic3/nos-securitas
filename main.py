@@ -100,7 +100,7 @@ col_div1, col_div2 = st.columns(2)
 with col_div1:
     opcoes_divisoes = [
         "Hall de Entrada / Recepção", "Sala de Estar / Zona Comum", "Quarto / Suite",
-        "Cozinha / Copa", "Varanda / Terraço", "Garagem / Anexo", "Cave",
+        "Cozinha / Copa", "Varanda / Terraço", "Garagem / Anexo", "Cave", "Cozinha / Copa",
         "Escritório", "Arrecadação / Armazém", "Oficina / Zona Técnica"
     ]
     divisao_selecionada = st.selectbox("Divisão Atual:", opcoes_divisoes)
@@ -118,7 +118,7 @@ with c1:
     tem_janelas = st.checkbox("Tem janelas/portas para o exterior?", value=True)
     num_janelas = 1
     if tem_janelas:
-        num_janelas = st.number_input("Quantidade de janelas/acessos:", min_value=1, value=1, step=1)
+        num_janelas = st.number_input("Quantidade de janelas/portas/acessos:", min_value=1, value=1, step=1)
     tem_ac_calor = st.checkbox("Fontes de calor diretas (AC/Lareira)")
     grande_envidracado = st.checkbox("Grandes vidros / Portas de correr")
 
@@ -154,7 +154,8 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
             nova_divisao["equipamentos_base"]["Sensor PIR Normal"] = 1
 
         if tem_janelas and (piso_selecionado in ["Rés-do-Chão / Alvo Fácil", "Último Andar / Recuado"]
-                            or divisao_selecionada in ["Garagem / Anexo", "Cave"]):
+                            or divisao_selecionada in ["Garagem / Anexo", "Cave", "Cozinha / Copa"]
+                            or quer_modo_casa == "SIM (Quer segurança à noite por dentro)" ):
             nova_divisao["equipamentos_base"]["Contacto Magnético"] = num_janelas
 
     if quer_painel_opcional:
@@ -185,7 +186,7 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
 if st.session_state.divisoes_instaladas:
     st.write("### 🏠 Plano de Instalação Atual:")
     for idx, div in enumerate(st.session_state.divisoes_instaladas):
-        texto_janelas = f" — {div['num_janelas']} janela(s)" if div['tem_janelas'] else ""
+        texto_janelas = f" — {div['num_janelas']} janela(s)/porta(s)" if div['tem_janelas'] else ""
         with st.expander(f"📍 {div['nome']} ({div['piso']}){texto_janelas}"):
             for eq, qtd in div["equipamentos_base"].items():
                 st.write(f"- {qtd}x {eq}")
