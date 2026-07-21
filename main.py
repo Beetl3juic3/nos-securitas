@@ -5,6 +5,8 @@ st.set_page_config(page_title="NOS Securitas - Auditoria e Venda", page_icon="�
 # --- TEMA NOS + UTILIDADES ---
 if "tema_escuro" not in st.session_state:
     st.session_state.tema_escuro = False
+if "quer_modo_casa" not in st.session_state:
+    st.session_state.quer_modo_casa = "Não (Usa apenas o alarme Total quando sai)"
 
 NOS_VERMELHO = "#E60000"
 NOS_AZUL = "#003366"
@@ -95,6 +97,23 @@ if "nome_cliente" not in st.session_state:
 if "historico_auditorias" not in st.session_state:
     st.session_state.historico_auditorias = []
 
+if "contrato_comercial" not in st.session_state:
+    st.session_state.contrato_comercial = {
+        "Sensor com Câmara": 1,
+        "Sensor PIR Normal": 1,
+        "Contacto Magnético": 1,
+        "Painel Touchscreen Principal": 1,
+        "Placa Dissuasora": 1,
+        "Sensor Cortina": 0,
+        "Sensor Quebra de Vidros": 0,
+        "Sirene Exterior": 0,
+        "Sirene Interior": 0,
+        "Câmara de Vídeo Interior": 0,
+        "Teclado Portátil Extra": 0,
+        "Sensor de Fumo/Temp": 0,
+        "Câmara de Vídeo Exterior": 0,
+    }
+
 
 def calcular_necessidades(divisoes, modo_noturno):
     """Calcula necessidades totais de equipamento."""
@@ -125,31 +144,29 @@ def calcular_faltas_e_extra(necessidades, stock_contrato):
 st.subheader("1. Equipamento do Contrato (Venda Comercial)")
 st.caption("Introduza o material que já vem incluído na proposta do comercial:")
 
-contrato_comercial = {}
-
 tab_base, tab_extras = st.tabs(["🛡️ Equipamentos Base", "🔔 Acessórios / Extras"])
 
 with tab_base:
     col_b1, col_b2 = st.columns(2)
     with col_b1:
-        contrato_comercial["Sensor com Câmara"] = st.number_input("Sensores com Câmara:", min_value=0, value=1, step=1, key="cc")
-        contrato_comercial["Sensor PIR Normal"] = st.number_input("Sensores PIR Normais:", min_value=0, value=1, step=1, key="pir")
-        contrato_comercial["Contacto Magnético"] = st.number_input("Contactos Magnéticos:", min_value=0, value=1, step=1, key="cm")
+        st.session_state.contrato_comercial["Sensor com Câmara"] = st.number_input("Sensores com Câmara:", min_value=0, value=st.session_state.contrato_comercial["Sensor com Câmara"], step=1, key="cc")
+        st.session_state.contrato_comercial["Sensor PIR Normal"] = st.number_input("Sensores PIR Normais:", min_value=0, value=st.session_state.contrato_comercial["Sensor PIR Normal"], step=1, key="pir")
+        st.session_state.contrato_comercial["Contacto Magnético"] = st.number_input("Contactos Magnéticos:", min_value=0, value=st.session_state.contrato_comercial["Contacto Magnético"], step=1, key="cm")
     with col_b2:
-        contrato_comercial["Painel Touchscreen Principal"] = st.number_input("Painel Touchscreen Principal:", min_value=0, value=1, step=1, key="pt")
-        contrato_comercial["Placa Dissuasora"] = st.number_input("Placas Dissuasoras incluídas:", min_value=0, value=1, step=1, key="pd")
-        contrato_comercial["Sensor Cortina"] = 0
+        st.session_state.contrato_comercial["Painel Touchscreen Principal"] = st.number_input("Painel Touchscreen Principal:", min_value=0, value=st.session_state.contrato_comercial["Painel Touchscreen Principal"], step=1, key="pt")
+        st.session_state.contrato_comercial["Placa Dissuasora"] = st.number_input("Placas Dissuasoras incluídas:", min_value=0, value=st.session_state.contrato_comercial["Placa Dissuasora"], step=1, key="pd")
 
 with tab_extras:
     col_e1, col_e2 = st.columns(2)
     with col_e1:
-        contrato_comercial["Sensor Quebra de Vidros"] = st.number_input("Quebra de Vidros no contrato:", min_value=0, value=0, step=1, key="qv")
-        contrato_comercial["Sirene Exterior"] = st.number_input("Sirenes Exteriores:", min_value=0, value=0, step=1, key="se")
-        contrato_comercial["Sirene Interior"] = st.number_input("Sirenes Interiores:", min_value=0, value=0, step=1, key="si")
+        st.session_state.contrato_comercial["Sensor Quebra de Vidros"] = st.number_input("Quebra de Vidros no contrato:", min_value=0, value=st.session_state.contrato_comercial["Sensor Quebra de Vidros"], step=1, key="qv")
+        st.session_state.contrato_comercial["Sirene Exterior"] = st.number_input("Sirenes Exteriores:", min_value=0, value=st.session_state.contrato_comercial["Sirene Exterior"], step=1, key="se")
+        st.session_state.contrato_comercial["Sirene Interior"] = st.number_input("Sirenes Interiores:", min_value=0, value=st.session_state.contrato_comercial["Sirene Interior"], step=1, key="si")
     with col_e2:
-        contrato_comercial["Câmara de Vídeo Interior"] = st.number_input("Câmaras de Vídeo Int.:", min_value=0, value=0, step=1, key="cam")
-        contrato_comercial["Teclado Portátil Extra"] = st.number_input("Teclados Extra:", min_value=0, value=0, step=1, key="tec")
-        contrato_comercial["Sensor de Fumo/Temp"] = st.number_input("Sensores de Fumo:", min_value=0, value=0, step=1, key="sf")
+        st.session_state.contrato_comercial["Câmara de Vídeo Interior"] = st.number_input("Câmaras de Vídeo Int.:", min_value=0, value=st.session_state.contrato_comercial["Câmara de Vídeo Interior"], step=1, key="cam")
+        st.session_state.contrato_comercial["Teclado Portátil Extra"] = st.number_input("Teclados Extra:", min_value=0, value=st.session_state.contrato_comercial["Teclado Portátil Extra"], step=1, key="tec")
+        st.session_state.contrato_comercial["Sensor de Fumo/Temp"] = st.number_input("Sensores de Fumo:", min_value=0, value=st.session_state.contrato_comercial["Sensor de Fumo/Temp"], step=1, key="sf")
+        st.session_state.contrato_comercial["Câmara de Vídeo Exterior"] = st.number_input("Câmaras de Vídeo Ext.:", min_value=0, value=st.session_state.contrato_comercial["Câmara de Vídeo Exterior"], step=1, key="cam_ext")
 
 st.divider()
 
@@ -165,9 +182,12 @@ with col1:
     tem_animais = st.radio("Animais no Interior?", ["Não", "Sim (Até 20kg)", "Sim (Gatos/Cães Grandes)"], horizontal=True)
 
 with col2:
+    _modo_opts = ["Não (Usa apenas o alarme Total quando sai)", "SIM (Quer segurança à noite por dentro)"]
+    _modo_idx = _modo_opts.index(st.session_state.quer_modo_casa)
     quer_modo_casa = st.session_state.quer_modo_casa = st.radio(
         "Uso do Modo Parcial/Noite:",
-        ["Não (Usa apenas o alarme Total quando sai)", "SIM (Quer segurança à noite por dentro)"]
+        _modo_opts,
+        index=_modo_idx
     )
 
 st.divider()
@@ -330,7 +350,7 @@ if st.session_state.divisoes_instaladas:
     st.subheader("📊 Resumo da Auditoria")
 
     necessidades_live = calcular_necessidades(st.session_state.divisoes_instaladas, quer_modo_casa)
-    faltas_live, total_live = calcular_faltas_e_extra(necessidades_live, contrato_comercial)
+    faltas_live, total_live = calcular_faltas_e_extra(necessidades_live, st.session_state.contrato_comercial)
 
     c1, c2, c3, c4 = st.columns([1, 1, 1, 1.2])
     with c1:
@@ -352,7 +372,7 @@ if st.session_state.divisoes_instaladas:
     stock_excedido = []
     for disp, qtd_falta in faltas_live.items():
         if qtd_falta > 0:
-            stock_excedido.append(f"{disp}: precisa de {necessidades_live[disp]}, contrato tem {contrato_comercial.get(disp, 0)}")
+            stock_excedido.append(f"{disp}: precisa de {necessidades_live[disp]}, contrato tem {st.session_state.contrato_comercial.get(disp, 0)}")
 
     if stock_excedido:
         st.warning("⚠️ Stock do Contrato Insuficiente:\n" + "\n".join(f"- {s}" for s in stock_excedido))
@@ -380,7 +400,7 @@ if st.session_state.divisoes_instaladas:
 
     for dispositivo, preco in PRECOS_MENSALIDADES.items():
         qtd_nec = necessidades_campo[dispositivo]
-        qtd_con = contrato_comercial.get(dispositivo, 0)
+        qtd_con = st.session_state.contrato_comercial.get(dispositivo, 0)
         faltas_faturar[dispositivo] = max(0, qtd_nec - qtd_con)
 
     col_orc1, col_orc2 = st.columns([2, 1])
@@ -405,7 +425,7 @@ if st.session_state.divisoes_instaladas:
 
     # --- ROTEIRO ---
     st.subheader("📍 Roteiro Técnico de Instalação")
-    stock = contrato_comercial.copy()
+    stock = st.session_state.contrato_comercial.copy()
 
     if stock.get("Placa Dissuasora", 0) > 0:
         st.success(f"🏷️ Colar Placas Dissuasoras: Fixar a(s) {stock['Placa Dissuasora']} placa(s) em pontos bem visíveis do exterior (Portões/Acessos).")
