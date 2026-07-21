@@ -352,6 +352,11 @@ if st.session_state.divisoes_instaladas:
     necessidades_live = calcular_necessidades(st.session_state.divisoes_instaladas, quer_modo_casa)
     faltas_live, total_live = calcular_faltas_e_extra(necessidades_live, st.session_state.contrato_comercial)
 
+    # Calcular diferença com/sin modo noite
+    necessidades_sem_noite = calcular_necessidades(st.session_state.divisoes_instaladas, "Não (Usa apenas o alarme Total quando sai)")
+    faltas_sem_noite, total_sem_noite = calcular_faltas_e_extra(necessidades_sem_noite, st.session_state.contrato_comercial)
+    diff_noite = total_live - total_sem_noite
+
     c1, c2, c3, c4 = st.columns([1, 1, 1, 1.2])
     with c1:
         st.metric("Divisões Mapeadas", len(st.session_state.divisoes_instaladas))
@@ -368,6 +373,22 @@ if st.session_state.divisoes_instaladas:
             st.session_state.alertas_finais = []
             st.session_state.nome_cliente = ""
             st.rerun()
+
+    # Comparador de modo noite
+    if diff_noite > 0:
+        st.markdown(
+            f'<div style="background:rgba(230,0,0,0.08);border-left:4px solid #E60000;padding:10px 14px;border-radius:4px;margin-top:8px;">'
+            f'<strong>🌙 Impacto do Modo Noite:</strong> O modo noturno adiciona <strong>{diff_noite:.2f} €/mês</strong> extra '
+            f'(sem modo noite: +{total_sem_noite:.2f} €, com modo noite: +{total_live:.2f} €). '
+            f'Pode mostrar esta diferença ao cliente para decidir.</div>',
+            unsafe_allow_html=True
+        )
+    elif diff_noite == 0 and quer_modo_casa == "SIM (Quer segurança à noite por dentro)":
+        st.markdown(
+            f'<div style="background:rgba(0,51,102,0.08);border-left:4px solid #003366;padding:10px 14px;border-radius:4px;margin-top:8px;">'
+            f'<strong>🌙 Impacto do Modo Noite:</strong> Sem custo extra. O modo noturno não acrescenta equipamentos adicionais para esta configuração.</div>',
+            unsafe_allow_html=True
+        )
 
     stock_excedido = []
     for disp, qtd_falta in faltas_live.items():
