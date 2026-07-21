@@ -10,8 +10,8 @@ NOS_VERMELHO = "#E60000"
 NOS_AZUL = "#003366"
 NOS_CINZA = "#F5F5F5"
 
-st.markdown(
-    '<style>'
+# CSS base
+css_base = (
     'div[data-testid="stHeader"]{display:none!important}'
     '#MainMenu{visibility:hidden}'
     'footer{visibility:hidden}'
@@ -28,32 +28,41 @@ st.markdown(
     '.sugestao-box{background:rgba(0,51,102,0.12);border-left:4px solid #003366;padding:10px 14px;border-radius:4px;margin-top:8px}'
     '.check-item{padding:6px 0;border-bottom:1px solid rgba(128,128,128,0.2)}'
     '.check-done{text-decoration:line-through;color:#888}'
-    '</style>',
-    unsafe_allow_html=True
 )
 
+# CSS tema escuro adicional
+if st.session_state.tema_escuro:
+    css_base += (
+        '.stApp{background-color:#0e1117;color:#fafafa}'
+        'div[data-testid="stMarkdownContainer"] p{color:#fafafa}'
+        'div[data-testid="stMarkdownContainer"] h1,div[data-testid="stMarkdownContainer"] h2,div[data-testid="stMarkdownContainer"] h3{color:#fafafa}'
+        '.card-divisao{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.15)}'
+        '.card-titulo{color:#66b3ff}'
+        '.card-meta{color:#aaa}'
+        'label{color:#fafafa!important}'
+        'span[data-testid="stMetricLabel"] p{color:#fafafa!important}'
+        'span[data-testid="stMetricValue"] p{color:#fafafa!important}'
+        'div[data-testid="stCheckbox"] label span{color:#fafafa!important}'
+    )
+
+st.markdown(f'<style>{css_base}</style>', unsafe_allow_html=True)
+
+col_tema, _ = st.columns([1, 6])
+with col_tema:
+    tema_label = "🌙 Escuro" if not st.session_state.tema_escuro else "☀️ Claro"
+    if st.button(tema_label, key="btn_tema", help="Alternar tema claro/escuro"):
+        st.session_state.tema_escuro = not st.session_state.tema_escuro
+        st.rerun()
+# --- CABEÇALHO COM LOGO ---
+_logo_color = "#fff" if st.session_state.tema_escuro else "#E60000"
 st.markdown(
-    f'<div style="text-align:right;margin-bottom:-10px;">'
-    f'<span style="font-size:0.8rem;color:#666;">Tema: </span>'
-    f'<a href="?" target="_self" style="text-decoration:none;font-size:0.85rem;">'
-    f'{"🌙 Escuro" if not st.session_state.tema_escuro else "☀️ Claro"}</a>'
+    f'<div style="text-align:center;margin-bottom:0.3rem;">'
+    f'<span style="font-size:2.2rem;font-weight:800;color:{_logo_color};letter-spacing:2px;">🛡️ NOS Securitas</span>'
     f'</div>',
     unsafe_allow_html=True
 )
-# --- CABEÇALHO COM LOGO ---
 st.markdown(
-    '<div style="text-align:center;margin-bottom:0.5rem;">'
-    '<span style="font-size:2.5rem;font-weight:800;color:#E60000;letter-spacing:2px;">NOS</span>'
-    '</div>',
-    unsafe_allow_html=True
-)
-st.markdown(
-    '<h2 style="text-align:center;margin-top:0;margin-bottom:0.2rem;color:#003366;font-weight:600;">'
-    'Securitas</h2>',
-    unsafe_allow_html=True
-)
-st.markdown(
-    '<p style="text-align:center;color:#888;font-size:0.9rem;margin-top:0.1rem;">'
+    '<p style="text-align:center;color:#888;font-size:0.85rem;margin-top:0.1rem;margin-bottom:0.3rem;">'
     'Auditoria e Orçamentação — Validação técnica em campo</p>',
     unsafe_allow_html=True
 )
@@ -72,7 +81,8 @@ PRECOS_MENSALIDADES = {
     "Câmara de Vídeo Interior": 5.00,
     "Sensor de Fumo/Temp": 3.00,
     "Sensor Cortina": 2.50,
-    "Sensor Quebra de Vidros": 2.00
+    "Sensor Quebra de Vidros": 2.00,
+    "Câmara de Vídeo Exterior": 7.00
 }
 
 # --- INICIALIZAÇÃO DA MEMÓRIA DA APP ---
@@ -200,6 +210,8 @@ with c2:
     quer_quebra_vidros_opcional = st.checkbox("➕ Incluir Sensor Quebra de Vidros")
     quer_sirene_ext_opcional = st.checkbox("➕ Incluir Sirene Exterior")
     quer_fumo_opcional = st.checkbox("➕ Incluir Sensor de Fumo/Temp")
+    quer_cam_int_opcional = st.checkbox("➕ Incluir Câmara de Vídeo Interior")
+    quer_cam_ext_opcional = st.checkbox("➕ Incluir Câmara de Vídeo Exterior")
 
 # --- SUGESTÕES INTELIGENTES ---
 sugestoes = []
@@ -257,6 +269,10 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
         nova_divisao["equipamentos_base"]["Sirene Exterior"] = 1
     if quer_fumo_opcional:
         nova_divisao["equipamentos_base"]["Sensor de Fumo/Temp"] = 1
+    if quer_cam_int_opcional:
+        nova_divisao["equipamentos_base"]["Câmara de Vídeo Interior"] = 1
+    if quer_cam_ext_opcional:
+        nova_divisao["equipamentos_base"]["Câmara de Vídeo Exterior"] = 1
 
     if tem_ac_calor:
         st.session_state.alertas_finais.append(
@@ -284,7 +300,7 @@ if st.session_state.divisoes_instaladas:
 
         badges = ""
         for eq, qtd in div["equipamentos_base"].items():
-            tipo = "badge-extra" if eq in ["Sensor Cortina", "Sensor Quebra de Vidros", "Sirene Exterior", "Sensor de Fumo/Temp", "Câmara de Vídeo Interior", "Teclado Portátil Extra"] else "badge-equip"
+            tipo = "badge-extra" if eq in ["Sensor Cortina", "Sensor Quebra de Vidros", "Sirene Exterior", "Sensor de Fumo/Temp", "Câmara de Vídeo Interior", "Câmara de Vídeo Exterior", "Teclado Portátil Extra"] else "badge-equip"
             badges += f'<span class="{tipo}">{qtd}x {eq}</span>'
 
         modo_extra = ""
@@ -451,27 +467,14 @@ st.info("""
 """)
 
 st.subheader("✅ Checklist Final de Instalação")
-if "checklist" not in st.session_state:
-    st.session_state.checklist = {
-        "painel_fixado": False,
-        "sensores_testados": False,
-        "contactos_alinhados": False,
-        "sirene_funcional": False,
-        "comunicacao_central": False,
-        "cliente_treinado": False,
-    }
-
-check_items = [
-    ("painel_fixado", "📱 Painel principal fixado com parafusos de tamper"),
-    ("sensores_testados", "🔍 Todos os sensores testados e com cobertura verificada"),
-    ("contactos_alinhados", "🪟 Contactos magnéticos alinhados e com gap < 5mm"),
-    ("sirene_funcional", "🚨 Sirene testada e audível no exterior"),
-    ("comunicacao_central", "📞 Comunicação com a Central validada"),
-    ("cliente_treinado", "👥 Cliente treinado no uso da app/painel"),
-]
-
-for key, label in check_items:
-    st.session_state.checklist[key] = st.checkbox(label, value=st.session_state.checklist[key])
+st.markdown(
+    "- 📱 Painel principal fixado com parafusos de tamper<br>"
+    "- 🔍 Todos os sensores testados e com cobertura verificada<br>"
+    "- 🪟 Contactos magnéticos alinhados e com gap < 5mm<br>"
+    "- 📞 Comunicação com a Central validada<br>"
+    "- 👥 Cliente treinado no uso da app/painel",
+    unsafe_allow_html=True
+)
 
 if st.session_state.alertas_finais:
     st.write("Alertas específicos detetados:")
