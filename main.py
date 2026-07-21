@@ -16,9 +16,23 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🛡️ NOS Securitas: Auditoria e Orçamentação")
-st.write("Validação técnica em campo e cálculo de upgrades na mensalidade.")
+# --- CABEÇALHO COM LOGO ---
+import base64, os
+_logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+_logo_b64 = base64.b64encode(open(_logo_path, "rb").read()).decode()
+_logo_html = f'<img src="data:image/png;base64,{_logo_b64}" width="220" style="display:block;margin:auto;" />'
 
+st.markdown(_logo_html, unsafe_allow_html=True)
+st.markdown(
+    '<h2 style="text-align:center;margin-top:0.2rem;margin-bottom:0.2rem;">'
+    'NOS Securitas</h2>',
+    unsafe_allow_html=True
+)
+st.markdown(
+    '<p style="text-align:center;color:#666;font-size:0.95rem;margin-top:0;">'
+    'Auditoria e Orçamentação — Validação técnica em campo</p>',
+    unsafe_allow_html=True
+)
 st.divider()
 
 # --- TABELA DE PREÇOS MENSAIS OFICIAIS ---
@@ -70,38 +84,6 @@ def calcular_faltas_e_extra(necessidades, stock_contrato):
         faltas[disp] = max(0, qtd_nec - qtd_con)
         total += faltas[disp] * preco
     return faltas, total
-
-# --- NOME DO CLIENTE ---
-col_cliente, col_hist = st.columns([3, 1])
-with col_cliente:
-    nome_cliente = st.text_input("👤 Nome do Cliente / Referência:", value=st.session_state.nome_cliente, key="nome_cliente_input")
-    st.session_state.nome_cliente = nome_cliente
-
-with col_hist:
-    st.write("")
-    st.write("")
-    if st.button("📝 Salvar no Histórico", use_container_width=True) and nome_cliente and st.session_state.divisoes_instaladas:
-        auditoria_atual = {
-            "nome": nome_cliente,
-            "divisoes": len(st.session_state.divisoes_instaladas),
-            "modo_noturno": st.session_state.get("quer_modo_casa", "Não"),
-            "equipamentos": [dict(div) for div in st.session_state.divisoes_instaladas]
-        }
-        st.session_state.historico_auditorias.append(auditoria_atual)
-        st.toast(f"Auditoria '{nome_cliente}' guardada!", icon="📝")
-
-if st.session_state.historico_auditorias:
-    with st.expander("📁 Histórico de Auditorias"):
-        for idx, aud in enumerate(st.session_state.historico_auditorias):
-            col_h1, col_h2 = st.columns([4, 1])
-            with col_h1:
-                st.write(f"{idx + 1}. **{aud['nome']}** — {aud['divisoes']} divisões ({aud['modo_noturno'][:3]})")
-            with col_h2:
-                if st.button("🗑️", key=f"hist_del_{idx}"):
-                    st.session_state.historico_auditorias.pop(idx)
-                    st.rerun()
-
-st.divider()
 
 # --- 1. EQUIPAMENTO DO CONTRATO (ABAS) ---
 st.subheader("1. Equipamento do Contrato (Venda Comercial)")
@@ -270,7 +252,7 @@ if st.session_state.divisoes_instaladas:
     necessidades_live = calcular_necessidades(st.session_state.divisoes_instaladas, quer_modo_casa)
     faltas_live, total_live = calcular_faltas_e_extra(necessidades_live, contrato_comercial)
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 1.2])
     with c1:
         st.metric("Divisões Mapeadas", len(st.session_state.divisoes_instaladas))
     with c2:
@@ -278,6 +260,14 @@ if st.session_state.divisoes_instaladas:
     with c3:
         extras_count = sum(1 for q in faltas_live.values() if q > 0)
         st.metric("Tipos de Extras", extras_count)
+    with c4:
+        st.write("")
+        st.write("")
+        if st.button("🔄 Limpar Tudo", use_container_width=True):
+            st.session_state.divisoes_instaladas = []
+            st.session_state.alertas_finais = []
+            st.session_state.nome_cliente = ""
+            st.rerun()
 
     stock_excedido = []
     for disp, qtd_falta in faltas_live.items():
@@ -369,15 +359,6 @@ if st.session_state.divisoes_instaladas:
                         st.info(f"➕ Instalar 1x {eq} (Extra a Faturar)")
                 else:
                     st.info(f"➕ Instalar 1x {eq} (Extra — Perímetro Noturno)")
-
-    st.divider()
-
-    # --- COMISSÃO / ARGUMENTO DO VENDEDOR ---
-    with st.expander("💎 Argumento do Vendedor (Comissão)"):
-        comissao_pct = st.number_input("Percentagem de comissão sobre extras (%):", min_value=0.0, max_value=100.0, value=15.0, step=5.0, key="comissao_pct")
-        comissao_valor = total_mensal_extra * (comissao_pct / 100)
-        st.metric("Ganho Estimado (mês)", f"{comissao_valor:.2f} €")
-        st.caption(f"Se o cliente aceitar +{total_mensal_extra:.2f}€/mês, a tua comissão é {comissao_valor:.2f}€/mês.")
 
     st.divider()
 
