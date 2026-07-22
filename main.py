@@ -80,11 +80,11 @@ PRECOS_MENSALIDADES = {
     "Sirene Exterior": 6.00,
     "Sirene Interior": 5.00,
     "Teclado Portátil Extra": 2.50,
-    "Câmara de Vídeo Interior": 5.00,
+    "Câmara de Vídeo Interior": 15.00,
     "Sensor de Fumo/Temp": 3.00,
     "Sensor Cortina": 2.50,
     "Sensor Quebra de Vidros": 2.00,
-    "Câmara de Vídeo Exterior": 7.00
+    "Câmara de Vídeo Exterior": 15.00
 }
 
 # --- INICIALIZAÇÃO DA MEMÓRIA DA APP ---
