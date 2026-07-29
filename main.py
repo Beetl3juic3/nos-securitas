@@ -3,12 +3,6 @@ import unicodedata
 from datetime import datetime
 
 import streamlit as st
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
 st.set_page_config(page_title="NOS Securitas - Auditoria e Venda", page_icon="🛡️", layout="centered")
 
@@ -169,42 +163,18 @@ def texto_pdf(texto):
 
 def criar_pdf_simulacao(nome, segmento, tipo_imovel, modo_noite, divisoes,
                         faltas, total_extra, decisao):
-    """Cria uma cópia offline da simulação para o cliente."""
-    buffer = io.BytesIO()
-    documento = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        rightMargin=16 * mm,
-        leftMargin=16 * mm,
-        topMargin=14 * mm,
-        bottomMargin=14 * mm,
-    )
-    estilos = getSampleStyleSheet()
-    titulo = ParagraphStyle(
-        "TituloNOS", parent=estilos["Title"], alignment=TA_CENTER,
-        textColor=colors.HexColor("#E60000"), fontSize=20, spaceAfter=4
-    )
-    subtitulo = ParagraphStyle(
-        "SubtituloNOS", parent=estilos["Normal"], alignment=TA_CENTER,
-        textColor=colors.HexColor("#666666"), spaceAfter=14
-    )
-    cabecalho = ParagraphStyle(
-        "CabecalhoNOS", parent=estilos["Heading2"],
-        textColor=colors.HexColor("#003366"), spaceBefore=10, spaceAfter=6
-    )
-    corpo = ParagraphStyle("CorpoNOS", parent=estilos["BodyText"], leading=14)
-    elementos = [
-        Paragraph("NOS Securitas", titulo),
-        Paragraph("Relatório de Auditoria e Orçamentação", subtitulo),
-        Paragraph(f"<b>Data:</b> {texto_pdf(datetime.now().strftime('%d/%m/%Y %H:%M'))}", corpo),
-        Paragraph(f"<b>Cliente:</b> {texto_pdf(nome or 'Não indicado')}", corpo),
-        Paragraph(f"<b>Segmento:</b> {texto_pdf(segmento)} | <b>Imóvel:</b> {texto_pdf(tipo_imovel)}", corpo),
-        Paragraph(f"<b>Modo parcial/noite:</b> {texto_pdf(modo_noite)}", corpo),
-        Spacer(1, 5 * mm),
-        Paragraph("Divisões e equipamentos", cabecalho),
+    """Cria um PDF simples e autónomo, sem bibliotecas externas."""
+    linhas = [
+        "NOS SECURITAS",
+        "Relatorio de Auditoria e Orcamentacao",
+        "",
+        f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+        f"Cliente: {nome or 'Nao indicado'}",
+        f"Segmento: {segmento} | Imovel: {tipo_imovel}",
+        f"Modo parcial/noite: {modo_noite}",
+        "",
+        "DIVISOES E EQUIPAMENTOS",
     ]
-
-    linhas = [["Divisão", "Piso", "Equipamentos"]]
     for divisao in divisoes:
         equipamentos = []
         for equipamento, quantidade in divisao["equipamentos_base"].items():
@@ -214,49 +184,64 @@ def criar_pdf_simulacao(nome, segmento, tipo_imovel, modo_noite, divisoes,
             extra = max(0, divisao["num_janelas"] - base)
             if extra:
                 equipamentos.append(f"{extra}x Contacto Magnético (extra modo noite)")
-        linhas.append([
-            Paragraph(texto_pdf(divisao["nome"]), corpo),
-            Paragraph(texto_pdf(divisao["piso"]), corpo),
-            Paragraph(texto_pdf(", ".join(equipamentos)), corpo),
-        ])
-
-    tabela = Table(linhas, colWidths=[45 * mm, 43 * mm, 88 * mm], repeatRows=1)
-    tabela.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CCCCCC")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F7F7F7")),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    ]))
-    elementos.append(tabela)
-    elementos.extend([
-        Spacer(1, 5 * mm),
-        Paragraph("Resumo do orçamento", cabecalho),
-        Paragraph(f"<b>Total de extras:</b> +{total_extra:.2f} EUR/mês", corpo),
-        Paragraph(f"<b>Decisão comercial:</b> {texto_pdf(decisao)}", corpo),
-    ])
-    extras = [f"{quantidade}x {texto_pdf(equipamento)}"
-              for equipamento, quantidade in faltas.items() if quantidade > 0]
-    elementos.append(Paragraph(
-        "<b>Equipamentos adicionais:</b> " + (", ".join(extras) if extras else "Nenhum"),
-        corpo,
-    ))
-    elementos.extend([
-        Spacer(1, 5 * mm),
-        Paragraph("Notas técnicas", cabecalho),
-        Paragraph(
-            "Este documento guarda o resultado da simulacao realizada. "
-            "Confirmar a validacao tecnica no local antes da instalacao.",
-            corpo,
+        linhas.append(f"- {divisao['nome']} | {divisao['piso']}")
+        linhas.append(f"  {', '.join(equipamentos)}")
+    linhas.extend([
+        "",
+        "RESUMO DO ORCAMENTO",
+        f"Total de extras: +{total_extra:.2f} EUR/mes",
+        f"Decisao comercial: {decisao}",
+        "Equipamentos adicionais: " + (
+            ", ".join(f"{q}x {e}" for e, q in faltas.items() if q > 0)
+            or "Nenhum"
         ),
+        "",
+        "NOTAS TECNICAS",
+        "Este documento guarda o resultado da simulacao realizada.",
+        "Confirmar a validacao tecnica no local antes da instalacao.",
     ])
-    documento.build(elementos)
-    return buffer.getvalue()
+
+    # PDF mínimo válido com fonte Helvetica incorporada no visualizador.
+    linhas = [texto_pdf(linha)[:115] for linha in linhas]
+    paginas = [linhas[i:i + 45] for i in range(0, len(linhas), 45)] or [[]]
+    objetos = []
+    paginas_obj = []
+    objetos.append("<< /Type /Catalog /Pages 2 0 R >>")
+    objetos.append("")
+    fonte_obj = 3
+    objetos.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    for numero, pagina in enumerate(paginas):
+        pagina_obj = 4 + numero * 2
+        conteudo_obj = pagina_obj + 1
+        stream = ["BT", "/F1 10 Tf", "50 790 Td", "14 TL"]
+        for linha in pagina:
+            segura = linha.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+            stream.append(f"({segura}) Tj")
+            stream.append("T*")
+        stream.append("ET")
+        dados = "\n".join(stream).encode("latin-1", "replace")
+        paginas_obj.append(f"{pagina_obj} 0 R")
+        objetos.append(
+            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
+            f"/Resources << /Font << /F1 {fonte_obj} 0 R >> >> "
+            f"/Contents {conteudo_obj} 0 R >>"
+        )
+        objetos.append(f"<< /Length {len(dados)} >>\nstream\n{dados.decode('latin-1')}\nendstream")
+    objetos[1] = f"<< /Type /Pages /Kids [{' '.join(paginas_obj)}] /Count {len(paginas_obj)} >>"
+    pdf = bytearray(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
+    offsets = [0]
+    for numero, objeto in enumerate(objetos, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f"{numero} 0 obj\n{objeto}\nendobj\n".encode("latin-1", "replace"))
+    xref = len(pdf)
+    pdf.extend(f"xref\n0 {len(objetos) + 1}\n0000000000 65535 f \n".encode())
+    for offset in offsets[1:]:
+        pdf.extend(f"{offset:010d} 00000 n \n".encode())
+    pdf.extend(
+        f"trailer\n<< /Size {len(objetos) + 1} /Root 1 0 R >>\n"
+        f"startxref\n{xref}\n%%EOF".encode()
+    )
+    return bytes(pdf)
 
 # --- 1. EQUIPAMENTO DO CONTRATO (ABAS) ---
 st.subheader("1. Equipamento do Contrato (Venda Comercial)")
