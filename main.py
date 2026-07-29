@@ -1,4 +1,14 @@
+import io
+import unicodedata
+from datetime import datetime
+
 import streamlit as st
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
 st.set_page_config(page_title="NOS Securitas - Auditoria e Venda", page_icon="🛡️", layout="centered")
 
@@ -114,6 +124,16 @@ if "contrato_comercial" not in st.session_state:
         "Câmara de Vídeo Exterior": 0,
     }
 
+def normalizar_divisoes_com_painel():
+    """Garante que o painel touch usa o sensor com câmara, nunca um PIR normal."""
+    for divisao in st.session_state.divisoes_instaladas:
+        equipamentos = divisao.get("equipamentos_base", {})
+        if equipamentos.get("Painel Touchscreen Principal", 0) > 0:
+            equipamentos.pop("Sensor PIR Normal", None)
+            equipamentos["Sensor com Câmara"] = 1
+
+normalizar_divisoes_com_painel()
+
 
 def calcular_necessidades(divisoes, modo_noturno):
     """Calcula necessidades totais de equipamento."""
@@ -139,6 +159,104 @@ def calcular_faltas_e_extra(necessidades, stock_contrato):
         faltas[disp] = max(0, qtd_nec - qtd_con)
         total += faltas[disp] * preco
     return faltas, total
+
+
+def texto_pdf(texto):
+    """Remove símbolos que não são suportados pela fonte PDF padrão."""
+    texto = unicodedata.normalize("NFKD", str(texto))
+    return texto.encode("latin-1", "replace").decode("latin-1")
+
+
+def criar_pdf_simulacao(nome, segmento, tipo_imovel, modo_noite, divisoes,
+                        faltas, total_extra, decisao):
+    """Cria uma cópia offline da simulação para o cliente."""
+    buffer = io.BytesIO()
+    documento = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=16 * mm,
+        leftMargin=16 * mm,
+        topMargin=14 * mm,
+        bottomMargin=14 * mm,
+    )
+    estilos = getSampleStyleSheet()
+    titulo = ParagraphStyle(
+        "TituloNOS", parent=estilos["Title"], alignment=TA_CENTER,
+        textColor=colors.HexColor("#E60000"), fontSize=20, spaceAfter=4
+    )
+    subtitulo = ParagraphStyle(
+        "SubtituloNOS", parent=estilos["Normal"], alignment=TA_CENTER,
+        textColor=colors.HexColor("#666666"), spaceAfter=14
+    )
+    cabecalho = ParagraphStyle(
+        "CabecalhoNOS", parent=estilos["Heading2"],
+        textColor=colors.HexColor("#003366"), spaceBefore=10, spaceAfter=6
+    )
+    corpo = ParagraphStyle("CorpoNOS", parent=estilos["BodyText"], leading=14)
+    elementos = [
+        Paragraph("NOS Securitas", titulo),
+        Paragraph("Relatório de Auditoria e Orçamentação", subtitulo),
+        Paragraph(f"<b>Data:</b> {texto_pdf(datetime.now().strftime('%d/%m/%Y %H:%M'))}", corpo),
+        Paragraph(f"<b>Cliente:</b> {texto_pdf(nome or 'Não indicado')}", corpo),
+        Paragraph(f"<b>Segmento:</b> {texto_pdf(segmento)} | <b>Imóvel:</b> {texto_pdf(tipo_imovel)}", corpo),
+        Paragraph(f"<b>Modo parcial/noite:</b> {texto_pdf(modo_noite)}", corpo),
+        Spacer(1, 5 * mm),
+        Paragraph("Divisões e equipamentos", cabecalho),
+    ]
+
+    linhas = [["Divisão", "Piso", "Equipamentos"]]
+    for divisao in divisoes:
+        equipamentos = []
+        for equipamento, quantidade in divisao["equipamentos_base"].items():
+            equipamentos.append(f"{quantidade}x {equipamento}")
+        if modo_noite == "SIM (Quer segurança à noite por dentro)" and divisao["tem_janelas"]:
+            base = divisao["equipamentos_base"].get("Contacto Magnético", 0)
+            extra = max(0, divisao["num_janelas"] - base)
+            if extra:
+                equipamentos.append(f"{extra}x Contacto Magnético (extra modo noite)")
+        linhas.append([
+            Paragraph(texto_pdf(divisao["nome"]), corpo),
+            Paragraph(texto_pdf(divisao["piso"]), corpo),
+            Paragraph(texto_pdf(", ".join(equipamentos)), corpo),
+        ])
+
+    tabela = Table(linhas, colWidths=[45 * mm, 43 * mm, 88 * mm], repeatRows=1)
+    tabela.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CCCCCC")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F7F7F7")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    elementos.append(tabela)
+    elementos.extend([
+        Spacer(1, 5 * mm),
+        Paragraph("Resumo do orçamento", cabecalho),
+        Paragraph(f"<b>Total de extras:</b> +{total_extra:.2f} EUR/mês", corpo),
+        Paragraph(f"<b>Decisão comercial:</b> {texto_pdf(decisao)}", corpo),
+    ])
+    extras = [f"{quantidade}x {texto_pdf(equipamento)}"
+              for equipamento, quantidade in faltas.items() if quantidade > 0]
+    elementos.append(Paragraph(
+        "<b>Equipamentos adicionais:</b> " + (", ".join(extras) if extras else "Nenhum"),
+        corpo,
+    ))
+    elementos.extend([
+        Spacer(1, 5 * mm),
+        Paragraph("Notas técnicas", cabecalho),
+        Paragraph(
+            "Este documento guarda o resultado da simulacao realizada. "
+            "Confirmar a validacao tecnica no local antes da instalacao.",
+            corpo,
+        ),
+    ])
+    documento.build(elementos)
+    return buffer.getvalue()
 
 # --- 1. EQUIPAMENTO DO CONTRATO (ABAS) ---
 st.subheader("1. Equipamento do Contrato (Venda Comercial)")
@@ -285,6 +403,7 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
         nova_divisao["equipamentos_base"]["Painel Touchscreen Principal"] = 1
         # O painel touch deve ficar sempre acompanhado pelo sensor com câmara
         # na mesma divisão para permitir a verificação visual junto ao painel.
+        nova_divisao["equipamentos_base"].pop("Sensor PIR Normal", None)
         nova_divisao["equipamentos_base"]["Sensor com Câmara"] = 1
 
     if quer_cortina_opcional:
@@ -493,6 +612,11 @@ if st.session_state.divisoes_instaladas:
 
     # --- FECHO ---
     st.subheader("5. Fecho de Venda")
+    st.session_state.nome_cliente = st.text_input(
+        "Nome do cliente (opcional):",
+        value=st.session_state.nome_cliente,
+        key="nome_cliente_input",
+    )
     decisao = st.radio(
         "Acordo Comercial:",
         ["A aguardar simulação...", "Aceitou os extras na mensalidade", "Recusou e assume os riscos"],
@@ -503,6 +627,26 @@ if st.session_state.divisoes_instaladas:
         st.success(f"🎉 Contrato Atualizado! Upgrade validado de +{total_mensal_extra:.2f}€/mês.")
     elif "Recusou" in decisao:
         st.error("⚠️ Proposta recusada. Instalar apenas material base.")
+
+    pdf_simulacao = criar_pdf_simulacao(
+        st.session_state.nome_cliente,
+        segmento,
+        tipo_imovel,
+        quer_modo_casa,
+        st.session_state.divisoes_instaladas,
+        faltas_faturar,
+        total_mensal_extra,
+        decisao,
+    )
+    st.download_button(
+        "📄 Descarregar PDF da Simulação",
+        data=pdf_simulacao,
+        file_name="nos-securitas-simulacao.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+        help="Guarda uma cópia offline da simulação para o cliente.",
+    )
+    st.caption("Guarda este PDF para o cliente ter acesso à simulação mesmo se a aplicação ficar indisponível.")
 
 # --- NOTAS + CHECKLIST INTERATIVO ---
 st.write("### 🚨 Regras Técnicas de Instalação")
