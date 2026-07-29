@@ -283,6 +283,9 @@ if st.button("➕ Adicionar Divisão ao Plano", type="primary", use_container_wi
 
     if quer_painel_opcional:
         nova_divisao["equipamentos_base"]["Painel Touchscreen Principal"] = 1
+        # O painel touch deve ficar sempre acompanhado pelo sensor com câmara
+        # na mesma divisão para permitir a verificação visual junto ao painel.
+        nova_divisao["equipamentos_base"]["Sensor com Câmara"] = 1
 
     if quer_cortina_opcional:
         nova_divisao["equipamentos_base"]["Sensor Cortina"] = 1
